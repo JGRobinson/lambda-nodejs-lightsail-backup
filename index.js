@@ -5,7 +5,7 @@ exports.handler = (event, context, callback) => {
   // Define your backups
   // ================================
 
-  const instanceName = "LAMP_Stack-2GB-Frankfurt-1" // Put your instance name here http://take.ms/dChbs
+  const instanceName = "grs-dedicated-alpha" // Put your instance name here http://take.ms/dChbs
   const backupDaysMax = 7; // keep at least 7 daily backups 
   const backupWeeksMax = 4; // keep at least 4  weekly  backups
   const backupMonthsMax = 3; // keep at least 3  monthly  backups
@@ -15,7 +15,7 @@ exports.handler = (event, context, callback) => {
   // ================================
 
   var AWS = require('aws-sdk');
-  AWS.config.update({ region: 'eu-central-1' });
+  AWS.config.update({ region: 'eu-west-2' });
   var Lightsail = new AWS.Lightsail();
 
   // ================================        
@@ -48,7 +48,7 @@ exports.handler = (event, context, callback) => {
   // ================================
 
   var params = {
-    "instanceSnapshotName": "KW" + kw + "TAG" + backupDaysNR
+    "instanceSnapshotName": instanceName +"-KW" + kw + "TAG" + backupDaysNR
   }
 
   Lightsail.getInstanceSnapshot(params, function (err, data) {
@@ -76,7 +76,7 @@ exports.handler = (event, context, callback) => {
   function newDaySnapshot(instanceName, backupDaysNR) {
     var params = {
       instanceName: instanceName,
-      instanceSnapshotName: 'TAG' + backupDaysNR
+      instanceSnapshotName: instanceName + '-TAG' + backupDaysNR
     };
     Lightsail.createInstanceSnapshot(params, function (err, data) {
       if (err) {
@@ -108,6 +108,10 @@ exports.handler = (event, context, callback) => {
         backupDate = new Date(data.instanceSnapshots[i].createdAt);
         backupDaysTillNow = Math.floor((now - backupDate) / oneDay);
         saveBackup = false;
+        if(data.instanceSnapshots[i].name.indexOf(instanceName) != 0){
+          saveBackup = true
+          console.log('ignored ' + data.instanceSnapshots[i].name + ' as it didnt start with ' + instanceName )
+        }
 
         // DO NOT DELETE LAST backupDaysMax DAYS BACKUPS
         if (backupDaysTillNow <= backupDaysMax) { saveBackup = true; }
